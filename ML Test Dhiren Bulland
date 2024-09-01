@@ -1,0 +1,106 @@
+BNZ Advanced Analytics MLE Technical Exercise
+
+This is an open-ended exercise and opportunity for you to demonstrate your capabilities and skills with
+data. Use the following StatsNZ datasets (https://www.stats.govt.nz/assets/Uploads/Businessemployment-data/Business-employment-data-March-2024-quarter/Download-data/businessemployment-data-march-2024-quarter.zip and https://www.stats.govt.nz/assets/Uploads/Businessfinancial-data/Business-financial-data-March-2024-quarter/Download-data/business-financial-datamarch-2024.zip) to answer questions 1 to 5.
+We request the answers be written in a Jupyter notebook or Google Colab notebook (see
+https://colab.research.google.com/#scrollTo=OwuxHmxllTwN) and then committed to a Github
+repository. Once you have completed the exercise, please email a link to your repository.
+We would like to see the code you used to obtain the answers to questions 1 to 3 and request that you do
+so using SQL operations performed using DuckDB. See https://duckdb.org/ for documentation on how
+to do this.
+
+
+Provide the answer and write a DuckDB SQL query that produces it.
+For question 5 you are free to use the methodology of your choice (we have a preference that you use
+Python if possible).
+
+
+
+1. Of the industries where salaries and wages data did NOT exist in 2016 and only appeared later,
+which industry had the highest average value for actual filled jobs across time and what was that
+value?
+
+create table average as
+select  max(data_value)
+from
+(select period, average(data_value)
+from employment_data
+where Series_title_1 = "Filled jobs"
+Filled jobs (workplace location based)
+Series_title_3 = "Actual"
+group by period) a
+inner join (select unique a.Series_title_2
+	    from financial_data
+	    where period = "2016.02"
+	    and period = "2016.03"
+	    and period = "2016.04"
+	    and period = "2016.05"
+	    and period = "2016.06"
+	    and period = "2016.07"
+	    and period = "2016.08"
+	    and period = "2016.09"
+	    and period = "2016.10"
+	    and period = "2016.11"
+	    and period = "2016.12"
+	    and Series_title_4 = "Seasonally adjusted")
+on a.series_title_2 = b.series_title_2;
+
+
+
+2. Provide the answer and write a DuckDB SQL query to show which year/month combination and
+industry had the second highest seasonally adjusted operating income sales across all the
+business industries in New Zealand that are categorised as NZSIOC level 2.
+
+create table sales as select
+unique period, row_number(), Series_title_2,
+from financial_data
+order by period, series_title_2
+where Group = "Industry by financial variable (NZSIOC Level 2)"
+and Series_title_4 = "Seasonally adjusted"
+and Series_title_1 = "Sales (operating income)"
+and row = 2;
+
+
+
+
+
+3. Create a DuckDB SQL query to calculate the quarterly cumulative number of filled jobs over time
+for the territorial authority with the highest average value of filled jobs across time. You may not
+use window functions in your query.
+
+proc sql;
+create table summary as select
+quarter(period) as quarter,
+sum(data_value) as data_value,
+avg(data_value) as average,
+max(avg(data_value) as highest_average,
+from employment
+where series_title_1 = "Filled Jobs";
+and group = Territorial authority by employment variable
+group by quarter;
+
+
+4. Assume these datasets are used in part of a pipeline where the file that arrives may contain
+unwanted duplicates, incorrect datatypes, missing dates or other data quality aberrations. What
+things could be done programmatically to make sure the input data is of adequate quality and
+improve the pipeline?
+
+Apart from the checks mentioned above, Completeness of the data, checking of the numbers against the front end system, checking against previous data, checking with stakeholders, Date checks, format checks.
+
+
+5. Create summary statistics and perform a statistical analysis or create a model using the
+provided datasets. We are interested in your justification for your choices and reasoning. You
+may join the data to other datasets from https://www.stats.govt.nz/large-datasets/csv-files-fordownload/ if you wish.
+
+Yearly sales by industry
+proc freq data = financial_data; table Data_value*series_title_2*period;
+run;
+
+
+proc freq data = employment_data; table sales*series_title_2*period;
+where series_Title_1 = run;
+
+
+
+
+
